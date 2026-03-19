@@ -1,0 +1,344 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Sullivan Business Report
+% LaTeX Template
+% Version 1.0 (May 5, 2022)
+%
+% This template originates from:
+% https://www.LaTeXTemplates.com
+%
+% Author:
+% Vel (vel@latextemplates.com)
+%
+% License:
+% CC BY-NC-SA 4.0 (https://creativecommons.org/licenses/by-nc-sa/4.0/)
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	CLASS, PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+\documentclass[
+	a4paper, % Paper size, use either a4paper or letterpaper
+	12pt, % Default font size, the template is designed to look good at 12pt so it's best not to change this
+	%unnumberedsections, % Uncomment for no section numbering
+]{CSSullivanBusinessReport}
+
+\addbibresource{sample.bib} % BibLaTeX bibliography file
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{tcolorbox}
+\usepackage{fontawesome5}
+
+\tcbuselibrary{listings, skins}
+
+% Definición de colores estilo VS Code
+\definecolor{vscodeBg}{RGB}{30, 30, 30}
+\definecolor{vscodeText}{RGB}{204, 204, 204}
+\definecolor{vscodeCommand}{RGB}{86, 156, 214}
+\definecolor{vscodePrompt}{RGB}{184, 215, 163}
+
+\newtcblisting{vscodeTerminal}{
+    arc=3pt,
+    boxrule=0pt,
+    colback=vscodeBg,
+    colupper=vscodeText,
+    fonttitle=\bfseries\small\sffamily,
+    title=Terminal --- bash,
+    colframe=gray!50!black,
+    listing only,
+    listing options={
+        basicstyle=\small\ttfamily\color{vscodeText},
+        breaklines=true,
+        columns=fullflexible,
+        % Hemos cambiado # por ## en la definición del literate
+        literate={root@}{\textcolor{vscodePrompt}{root@}}{7} 
+                 {:}{\textcolor{vscodePrompt}{:}}{1} 
+                 {/opt\#\#}{\textcolor{vscodePrompt}{/opt\#}}{5}
+    },
+    left=5pt, right=5pt, top=5pt, bottom=5pt
+}
+
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+
+\definecolor{pyBg}{RGB}{28,28,28}
+\definecolor{pyText}{RGB}{204,204,204}
+\definecolor{pyKeyword}{RGB}{86,156,214}
+\definecolor{pyString}{RGB}{206,145,120}
+\definecolor{pyComment}{RGB}{106,153,85}
+
+\lstdefinestyle{pythonVSCode}{
+    language=Python,
+    backgroundcolor=\color{pyBg},
+    basicstyle=\small\ttfamily\color{pyText},
+    keywordstyle=\color{pyKeyword}\bfseries,
+    stringstyle=\color{pyString},
+    commentstyle=\color{pyComment}\itshape,
+    showstringspaces=false,
+    breaklines=true,
+    columns=fullflexible
+}
+
+\newtcblisting{vscodePython}{
+    arc=3pt,
+    boxrule=0pt,
+    colback=pyBg,
+    colframe=gray!50!black,
+    listing only,
+    listing options={style=pythonVSCode},
+    title=Python,
+    left=5pt, right=5pt, top=5pt, bottom=5pt
+}
+
+%----------------------------------------------------------------------------------------
+%	REPORT INFORMATION
+%----------------------------------------------------------------------------------------
+
+\reporttitle{Practica Optimización para Grandes volumenes de datos} % The report title to appear on the title page and page headers, do not create manual new lines here as this will carry over to page headers
+
+%\reportsubtitle{A professional layout featuring a large margin\\ and examples of typical business report content} % Report subtitle, include new lines if needed
+
+\reportauthors{Yago Boleas, Rodrigo Aguirregabiria, Adrian Estoquera} % Report authors/group/department, include new lines if needed
+
+\reportdate{\today} % Report date, include new lines for additional information if needed
+
+\rightheadercontent{\includegraphics[width=3cm]{upm_logo.png}} % The content in the right header, you may want to add your own company logo or use your company/department name or leave this command empty for no right header content
+
+%----------------------------------------------------------------------------------------
+
+\begin{document}
+
+%----------------------------------------------------------------------------------------
+%	TITLE PAGE
+%----------------------------------------------------------------------------------------
+
+\thispagestyle{empty} % Suppress headers and footers on this page
+
+\begin{fullwidth} % Use the whole page width
+	\vspace*{-0.075\textheight} % Pull logo into the top margin
+	
+	\hfill\includegraphics[width=5cm]{upm_logo.png} % Company logo
+
+	\vspace{0.15\textheight} % Vertical whitespace
+
+	\parbox{0.9\fulltextwidth}{\fontsize{50pt}{52pt}\selectfont\raggedright\textbf{\reporttitle}\par} % Report title, intentionally at less than full width for nice wrapping. Adjust the width of the \parbox and the font size as needed for your title to look good.
+	
+	\vspace{0.03\textheight} % Vertical whitespace
+	
+	{\LARGE\textit{\textbf{\reportsubtitle}}\par} % Subtitle
+	
+	\vfill % Vertical whitespace
+	
+	{\Large\reportauthors\par} % Report authors, group or department
+	
+	\vfill\vfill\vfill % Vertical whitespace
+	
+	{\large\reportdate\par} % Report date
+\end{fullwidth}
+
+\newpage
+
+
+%----------------------------------------------------------------------------------------
+%	TABLE OF CONTENTS
+%----------------------------------------------------------------------------------------
+
+\begin{twothirdswidth} % Content in this environment to be at two-thirds of the whole page width
+	\tableofcontents % Output the table of contents, automatically generated from the section commands used in the document
+\end{twothirdswidth}
+
+\newpage
+
+%----------------------------------------------------------------------------------------
+%	SECTIONS
+%----------------------------------------------------------------------------------------
+\section{Primeros pasos con Apache Kafka}
+
+En esta sección se explica cómo se ha resuelto el primer ejercicio. El primer paso consiste en acceder al contenedor donde reside el servicio de Kafka para ejecutar las herramientas de línea de comandos integradas.
+
+\subsection{Acceso al entorno y Gestión de Tópicos}
+
+Para comenzar la interacción, nos conectamos al contenedor mediante el comando \texttt{docker exec}, lo que nos permite abrir una terminal interactiva dentro del nodo de Kafka:
+
+\begin{vscodeTerminal}
+docker exec -it kafka-backend bash
+\end{vscodeTerminal}
+
+Una vez dentro, el objetivo es crear nuestro primer canal de comunicación o "Topic". Los tópicos son las categorías o nombres de feeds donde se almacenan y publican los registros de datos.
+
+\subsubsection{Creación y Verificación}
+
+Utilizamos el script \texttt{kafka-topics.sh} para definir una nueva estructura llamada \texttt{firstTopic}. Los comandos ejecutados y su función se resumen en la siguiente tabla:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|p{10cm}|}
+\hline
+\textbf{Parámetro/Flag} & \textbf{Descripción} \\ \hline
+\texttt{--bootstrap-server} & Dirección del servidor Kafka inicial para establecer conexión. \\ \hline
+\texttt{--create} & Instrucción para generar un nuevo tópico. \\ \hline
+\texttt{--topic} & Especifica el nombre identificador (firstTopic). \\ \hline
+\texttt{--list} & Lista todos los tópicos existentes en el servidor. \\ \hline
+\texttt{--describe} & Muestra metadatos detallados (particiones, réplicas, etc.). \\ \hline
+\end{tabular}
+\caption{Parámetros utilizados en la gestión de tópicos.}
+\end{table}
+
+A continuación, se muestra la ejecución en la terminal de estas operaciones:
+
+\begin{vscodeTerminal}
+root@fa1dbb2ab5cd:/opt# ./kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --create --topic firstTopic
+Created topic firstTopic.
+
+root@fa1dbb2ab5cd:/opt# ./kafka/bin/kafka-topics.sh --list --bootstrap-server localhost:9092
+firstTopic
+prediction_topic
+water_quality
+\end{vscodeTerminal}
+
+Al ejecutar el comando de inspección (\texttt{--describe}), Kafka nos devuelve información  sobre la topología del tópico:
+
+\begin{vscodeTerminal}
+root@fa1dbb2ab5cd:/opt# ./kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --describe --topic firstTopic
+Topic: firstTopic    TopicId: rpAfjVfjRL2vNpCoVUfV_w PartitionCount: 1       ReplicationFactor: 1    Configs:
+Topic: firstTopic       Partition: 0    Leader: 0       Replicas: 0     Isr: 0
+\end{vscodeTerminal}
+
+\textbf{Análisis del resultado:}
+\begin{itemize}
+\item \textbf{PartitionCount: 1}: El tópico no está dividido; todos los mensajes van a una única cola secuencial.
+\item \textbf{Leader: 0}: El nodo con ID 0 es el responsable de gestionar las lecturas y escrituras de esta partición.
+\item \textbf{Isr (In-Sync Replicas)}: Indica qué nodos están actualmente sincronizados con el líder (en este caso, solo el nodo 0).
+\end{itemize}
+
+\subsection{Flujo de mensajes: Producer y Consumer}
+
+Para comprobar la arquitectura Pub/Sub (Publicador/Suscriptor) de Kafka, es necesario abrir dos terminales independientes dentro del contenedor.
+
+\subsubsection{Configuración del Suscriptor (Consumer)}
+Primero, ponemos a Kafka en modo escucha. El consumidor se suscribe al tópico \texttt{firstTopic} y queda a la espera de nuevos eventos:
+
+\begin{vscodeTerminal}
+root@fa1dbb2ab5cd:/opt# ./kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic firstTopic
+\end{vscodeTerminal}
+
+\subsubsection{Configuración del Publicador (Producer)}
+En una segunda terminal, iniciamos el publicador. Este script abre una línea de comandos interactiva donde cada línea de texto que escribamos se enviará como un mensaje individual al tópico:
+
+\begin{vscodeTerminal}
+root@fa1dbb2ab5cd:/opt# ./kafka/bin/kafka-console-producer.sh --broker-list localhost:9092 --topic firstTopic
+
+Hola
+Mundo
+\end{vscodeTerminal}
+
+\subsubsection{Verificación del resultado}
+Como se puede observar en las capturas adjuntas, existe una sincronización inmediata. Al escribir "Hola" y "Mundo" en la terminal del Producer, los mensajes aparecen instantáneamente en la terminal del Consumer. Esto demuestra que Kafka ha actuado como un intermediario eficiente, distribuyendo la información en tiempo real desde la fuente hacia los suscriptores interesados.
+
+\begin{figure}[H]
+    \begin{fullwidth} 
+        \centering
+        \includegraphics[width=1.0\fulltextwidth]{ejercicio_1.png} 
+        \caption{Muestra de dos terminales diferentes enviandose mensajes a través de un topic. A la izquierda el producto y a la derecha el consumidor.}
+        \label{fig:ejercicio1_full}
+    \end{fullwidth}
+\end{figure}
+
+\section{Data streaming usando kafka-python}
+
+En la siguiente sección se muestra cómo se ha resuelto el 2º ejercicio.
+
+\subsection{Ejecución del código de los \textit{Jupyter notebooks}}
+
+Si ejecutamos las celdas de los archivos proporcionados obtendremos lo siguiente:
+
+\begin{figure}[H]
+    \begin{fullwidth} 
+        \centering
+        \includegraphics[width=0.75\fulltextwidth]{ejercicio_2_producer.png} 
+        \caption{Muestra del productor proporcionado enviando mensajes al topic \textit{water\_quality}.}
+        \label{fig:ejercicio_2_producer}
+    \end{fullwidth}
+\end{figure}
+
+\begin{figure}[H]
+    \begin{fullwidth} 
+        \centering
+        \includegraphics[width=0.75\fulltextwidth]{ejercicio_2_producer.png} 
+        \caption{Muestra de como el consumidor proporcionado que escucha al topic \textit{water\_quality} recibe los mensajes del productor.}
+        \label{fig:ejercicio_2_consumer}
+    \end{fullwidth}
+\end{figure}
+
+En las capturas puede obsrvarse cómo los mensajes que le llegan al consumidor son los mismos que se acaban de enviar por el productor.
+
+\subsubsection{Grafico generado por el consumidor}
+
+El consumidor puede procesar los datos y realizar con ellos cualquier lógica de negocio. En este caso, los datos se envian a una función que realiza un \textit{plot} que simula el comportamiento de un \textit{dashboard}:
+
+\begin{figure}[H]
+    \begin{fullwidth} 
+        \centering
+        \includegraphics[width=1.0\fulltextwidth]{ejercicio_2_w_quality.png} 
+        \caption{Imagen generada por el consumidor con los datos que recibe desde el topic \textit{water\_quality}.}
+        \label{fig:ejercicio_2_w_quality}
+    \end{fullwidth}
+\end{figure}
+
+\subsubsection{Intentando enviar datos no serializables}
+
+Podemos intentar enviar estructuras de datos complejas como \textit{arrays} de \textit{NumPy} de la siguiente manera:
+
+\begin{vscodePython}
+# Create Kafka producer
+producer = KafkaProducer(
+    bootstrap_servers=kafka_bootstrap_servers,
+    value_serializer=lambda v: json.dumps(v).encode('utf-8')
+)
+
+print(f"Producing messages to Kafka topic '{kafka_topic}'...")
+
+try:
+    while True:
+        # Generate sensor data
+        sensor_data = generate_sensor_data()
+
+        # Publish sensor data to Kafka
+        data = np.array([e for e in sensor_data.values()])
+        print(f"{data=}")
+        producer.send(kafka_topic, data)
+
+\end{vscodePython}
+
+Al hacer esto obtendremos un error como el siguiente:
+\begin{vscodeTerminal}
+Producing messages to Kafka topic 'water_quality'...
+data=array([1.77392590e+09, 2.63006815e+01, 8.27793620e+00, 7.57000000e+00, 1.05800000e+01])
+----------------------------------------------------
+TypeError                                 Traceback (most recent call last)
+Cell In[15], line 22
+     20 data = np.array([e for e in sensor_data.values()])
+     21 print(f"{data=}")
+---> 22 producer.send(kafka_topic, data)
+     24 print(f"Sent: {sensor_data}")
+     26 # Wait for 1 second
+
+TypeError: Object of type ndarray is not JSON serializable
+\end{vscodeTerminal}
+
+Este error indica que el objeto de tipo \texttt{ndarray} no puede ser serializado mediante JSON. El motivo es que el serializador configurado (\texttt{json.dumps}) solo admite tipos nativos de Python (como \texttt{int}, \texttt{float}, \texttt{str}, \texttt{list}, \texttt{dict}, etc.), pero no estructuras propias de bibliotecas externas como \texttt{NumPy}.
+
+Para resolver este problema existen varias estrategias:
+
+\begin{itemize}
+    \item Convertir explícitamente el array a un tipo serializable (por ejemplo, una lista de Python).
+    \item Definir un serializador personalizado que transforme objetos de \texttt{NumPy}.
+    \item Utilizar formatos de serialización alternativos (como Avro o Protobuf) que soporten esquemas más ricos.
+\end{itemize}
+
+
+
+%----------------------------------------------------------------------------------------
+
+\end{document}
