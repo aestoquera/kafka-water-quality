@@ -296,7 +296,7 @@
 \DeclareCaptionStyle{widefigure}{font={bf, footnotesize}, justification=raggedright, singlelinecheck=false}
 \DeclareCaptionStyle{marginfigure}{font={bf, scriptsize}, justification=raggedright, singlelinecheck=false}
 \DeclareCaptionStyle{margintable}{font={bf, scriptsize}, justification=raggedright, singlelinecheck=false}
-
+\captionsetup[figure]{belowskip=-25pt}
 %----------------------------------------------------------------------------------------
 %	LISTS
 %----------------------------------------------------------------------------------------

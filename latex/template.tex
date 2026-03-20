@@ -28,9 +28,11 @@
 \usepackage{listings}
 \usepackage{tcolorbox}
 \usepackage{fontawesome5}
+\usepackage{graphicx}
+\usepackage{subcaption}
 
 \tcbuselibrary{listings, skins}
-
+\tcbuselibrary{breakable}
 % Definición de colores estilo VS Code
 \definecolor{vscodeBg}{RGB}{30, 30, 30}
 \definecolor{vscodeText}{RGB}{204, 204, 204}
@@ -39,7 +41,7 @@
 
 \newtcblisting{vscodeTerminal}{
     arc=3pt,
-    boxrule=0pt,
+    boxrule=5pt,
     colback=vscodeBg,
     colupper=vscodeText,
     fonttitle=\bfseries\small\sffamily,
@@ -50,18 +52,12 @@
         basicstyle=\small\ttfamily\color{vscodeText},
         breaklines=true,
         columns=fullflexible,
-        % Hemos cambiado # por ## en la definición del literate
-        literate={root@}{\textcolor{vscodePrompt}{root@}}{7} 
+               literate={root@}{\textcolor{vscodePrompt}{root@}}{7} 
                  {:}{\textcolor{vscodePrompt}{:}}{1} 
                  {/opt\#\#}{\textcolor{vscodePrompt}{/opt\#}}{5}
     },
-    left=5pt, right=5pt, top=5pt, bottom=5pt
+    left=15pt, right=5pt, top=5pt, bottom=5pt
 }
-
-\usepackage{listings}
-\usepackage{xcolor}
-\usepackage{tcolorbox}
-
 \definecolor{pyBg}{RGB}{28,28,28}
 \definecolor{pyText}{RGB}{204,204,204}
 \definecolor{pyKeyword}{RGB}{86,156,214}
@@ -81,16 +77,18 @@
 }
 
 \newtcblisting{vscodePython}{
+    enhanced,
+    breakable,
+    use color stack,
     arc=3pt,
-    boxrule=0pt,
+    boxrule=5pt,
     colback=pyBg,
     colframe=gray!50!black,
     listing only,
     listing options={style=pythonVSCode},
     title=Python,
-    left=5pt, right=5pt, top=5pt, bottom=5pt
+    left=15pt, right=5pt, top=5pt, bottom=5pt
 }
-
 %----------------------------------------------------------------------------------------
 %	REPORT INFORMATION
 %----------------------------------------------------------------------------------------
@@ -99,7 +97,7 @@
 
 %\reportsubtitle{A professional layout featuring a large margin\\ and examples of typical business report content} % Report subtitle, include new lines if needed
 
-\reportauthors{Yago Boleas, Rodrigo Aguirregabiria, Adrian Estoquera} % Report authors/group/department, include new lines if needed
+\reportauthors{Rodrigo Aguirregabiria, Yago Boleas, Adrian Estoquera} % Report authors/group/department, include new lines if needed
 
 \reportdate{\today} % Report date, include new lines for additional information if needed
 
@@ -273,9 +271,9 @@ Si ejecutamos las celdas de los archivos proporcionados obtendremos lo siguiente
 
 En las capturas puede obsrvarse cómo los mensajes que le llegan al consumidor son los mismos que se acaban de enviar por el productor.
 
-\subsection{Grafico generado por el consumidor}
+\subsection{Gráfico generado por el consumidor}
 
-El consumidor puede procesar los datos y realizar con ellos cualquier lógica de negocio. En este caso, los datos se envian a una función que realiza un \textit{plot} que simula el comportamiento de un \textit{dashboard}:
+El consumidor puede procesar los datos y realizar con ellos cualquier lógica de negocio. En este caso, los datos se envían a una función que realiza un \textit{plot} que simula el comportamiento de un \textit{dashboard}:
 
 \begin{figure}[H]
     \begin{fullwidth} 
@@ -285,6 +283,15 @@ El consumidor puede procesar los datos y realizar con ellos cualquier lógica de
         \label{fig:ejercicio_2_w_quality}
     \end{fullwidth}
 \end{figure}
+
+\subsection{Efecto de la propiedad \textit{auto\_offset\_reset}}
+
+Esta propiedad determina qué debe hacer el consumidor cuando se conecta a un tópico de Kafka y es la primera vez que se conecta o el offset actual inválido (los datos se han borrado por la política de retención). 
+
+Si aplicamos la configuración \textit{earliest} es consumidor retrocede al inicio del log y lee todos los mensajes históricos que estén disponibles por el broker. Es la configuración más útil cuando se desea evitar perder cualquier dato tras una caída del sistema.
+
+La configuración \textit{latest} ignora los mensajes antiguos y se queda escuchando solamente los que se produzcan desde su conexión. Es una configuración pensada para la monitorización puramente en tiempo real donde los datos del pasado ya no son relevantes para la visualización actual.
+
 
 \subsection{Intentando enviar datos no serializables}
 
@@ -337,7 +344,331 @@ Para resolver este problema existen varias estrategias:
     \item Utilizar formatos de serialización alternativos (como Avro o Protobuf) que soporten esquemas más ricos.
 \end{itemize}
 
+\subsection{Modificar el tópico para que tenga 2 particiones}
 
+Para realizar esta modificación debemos ejecutar el siguiente comando en la bash:
+
+\begin{vscodeTerminal}
+    root@fa1dbb2ab5cd:/opt# ./kafka/bin/kafka-topics.sh \
+  --bootstrap-server localhost:9092 \
+  --alter \
+  --topic water_quality \
+  --partitions 2
+root@fa1dbb2ab5cd:/opt#
+\end{vscodeTerminal}
+
+Como podemos observar, ejecutar este comando no revuelve ningún resultado. Por lo que tenemos que verificarlo de la siguiente manera:
+
+\begin{figure}[H]
+    \begin{fullwidth} 
+        
+        \centering
+        \includegraphics[width=1.0\fulltextwidth]{ejercicio_2_partitions.png} 
+        \caption{Comando y resultados para verificar el número de particiones del tópico.}
+        \label{fig:ejercicio_2_partitions}
+    \end{fullwidth}
+\end{figure}
+
+En la figura \ref{fig:ejercicio_2_partitions} se puede observar que \textit{PartitionCount} es ahora 2. Además se puede identificar que tal y como está actualmente configurado, no hay redundancia ya que \textit{ReplicationFactor} = 1. A pesar de haber dos particiones, las dos están lideradas por el mismo \textit{broker}. Esto es debido a que solo hemos configurado un nodo. Es recomendable aumentar el número de productores para habilitar la tolerancia a fallos y distribuir la carga mediante una paralelización real. 
+
+\subsection{Crear varios productores}
+
+Para crear múltiples productores, se han realizado varios cambios. En primer lugar, hemos interpretado \textit{generar varios productores} como instanciar nuevos objetos de la clase \textit{KafkaProducer}; no solo usar una sola instancia y enviar mensajes con \textit{keys} diferentes. Por tanto el proceso consiste en:
+\begin{lstlisting}
+1. Elegir un numero K de productores
+2. Instanciar K productores e IDs y almacenarlos
+3. Seleccionar el primer productor y su ID
+4. Generar datos sinteticos
+5. Enviar los datos sinteticos mediante el productor seleccionado usando como key su ID
+6. Seleccionar el siguiente productor en la lista y su ID y repetir los pasos 4 a 5 hasta haber seleccionado todos los productores
+7. Repetir infinitamente los pasos 3 a 6
+\end{lstlisting}
+
+Los mensajes enviados a un topic con la misma key siempre se asignan a la misma partición. Se asigna el ID del productor a la key a la hora de enviar el mensaje para lograr que los mensajes de un productor siempre vayan a la misma partición.
+
+Para demostrar que la generación de varios productores ha tenido éxito se adjuntan las siguiente pruebas:
+\begin{figure}[H]
+    \begin{fullwidth} 
+        \centering
+        \includegraphics[width=1.0\fulltextwidth]{ejercicio_2_prod_order.png} 
+        \caption{Al añadir más productores y recorrerlos con un \textit{for} estos envían sus datos de manera secuencial}
+        \label{fig:ejercicio_2_prod_order}
+    \end{fullwidth}
+\end{figure}
+
+\begin{figure}[H]
+    \begin{fullwidth} 
+        \centering
+        \includegraphics[width=1.0\fulltextwidth]{ejercicio_2_cons_unord.png} 
+        \caption{Los consumidores leen los mensajes enviados por cada productor en un orden aleatorio}
+        \label{fig:ejercicio_2_cons_unord}
+    \end{fullwidth}
+\end{figure}
+
+Esto es debido a que \textit{Kafka} no garantiza un orden global de consumo cuando intervienen múltiples claves y particiones. El orden solo está asegurado dentro de una misma partición y como cada \textit{producer\_id} se envía con una \textit{key} diferente, \textit{Kafka} las distribuye en distintas particiones. Posteriormente el consumidor, lee de varias particiones de forma concurrente, lo que provoca que los mensajes se muestren intercalados. No obstante, dentro de cada partición el orden se mantiene. 
+
+Las modificaciones que se han llevado a cabo en el fichero de producción son las siguientes:
+
+\pagebreak
+
+\begin{vscodePython}
+####################
+# Codigo original:
+####################
+# Kafka configuration
+kafka_topic = "water_quality"
+kafka_bootstrap_servers = ["localhost:9092"] 
+
+# Create Kafka producer
+# producer = KafkaProducer(
+#     bootstrap_servers=kafka_bootstrap_servers,
+#     value_serializer=lambda v: json.dumps(v).encode('utf-8')
+# )
+
+###########
+# Modificacion para varios productores
+###########
+
+producer_number = 7
+producers = [] # Aqui almacenaremos nuestros producers
+producer_ids = [] # Le damos a cada uno un ID unico
+# Create Kafka producer
+for i in range(producer_number):
+	producer_ids.append("producerID_"+str(i)) # Generacion del ID
+	producers.append(KafkaProducer(
+			bootstrap_servers=kafka_bootstrap_servers,
+			value_serializer=lambda v: json.dumps(v).encode('utf-8')
+			)) # Instanciamos el producers
+
+
+try:
+    while True:
+        # Iteramos por cada producer (simulacion de multiples fuentes de datos)
+        for i, producer  in enumerate(producers):
+            # Generate sensor data
+            sensor_data = generate_sensor_data()
+
+            # Publish sensor data to Kafka
+            # Aniadimos identificador al mensaje
+            sensor_data["producer_id"] = producer_ids[i]
+            # Aniadimos una key unica (producer_id) para identificar el origen del mensaje
+            producer.send(kafka_topic, key=producer_ids[i].encode('utf-8'), value=sensor_data)
+
+            print(f"Sent: {sensor_data}")
+
+        # Wait for 1 second
+        time.sleep(1)
+except KeyboardInterrupt:
+    print("Stopped producing messages.")
+finally:
+    # Cerramos todos los producers
+    [producer.close() for producer in producers]
+\end{vscodePython}
+
+\subsection{Consumidores con ID común}
+Para poder procesar mensajes con varios consumidores que pertenezcan a un grupo se deben hacer los siguientes cambios:
+
+En primer lugar, debemos tener un almacenamiento que permita agrupar los IDs de sensores de los que vaya a hacerse cargo el consumidor. Para ello vamos a utilizar un diccionario de \textit{python} con una cola que controle el número máximo de elementos que debe almacenar:
+
+\begin{vscodePython}
+MAX_SAMPLES = 100
+# Almacenamiento dinamico
+data_by_sensor = {}
+def process_message(message_value):
+    """Extrae y almacena los datos del sensor."""
+    s_id = message_value['producer_id']
+    
+    # Inicializacion con deque para manejo automatico de tamanio
+    if s_id not in data_by_sensor:
+        data_by_sensor[s_id] = {
+            "timestamps": deque(maxlen=MAX_SAMPLES),
+            **{k: deque(maxlen=MAX_SAMPLES) for k in METRICS.keys()}
+        }
+    
+    storage = data_by_sensor[s_id]
+    storage["timestamps"].append(message_value['timestamp'])
+    for key in METRICS:
+        storage[key].append(message_value[key])
+    
+    return s_id
+\end{vscodePython}
+
+Además de esto, se debe añadir el ID del grupo al consumidor y cómo deserializar el ID de la key:
+\begin{vscodePython}
+    # Kafka configuration
+def initialize_consumer():
+    kafka_topic = "water_quality"
+    kafka_bootstrap_servers = ["localhost:9092"]
+
+    # Create Kafka consumer
+    consumer = KafkaConsumer(
+        kafka_topic,
+        bootstrap_servers=kafka_bootstrap_servers,
+        value_deserializer=lambda m: json.loads(m.decode('utf-8')),
+        auto_offset_reset='latest',
+        enable_auto_commit=True,
+        group_id="water_consumers_group",   # Aniadimos el consumidor a un grupo
+        key_deserializer=lambda k: k.decode('utf-8') if k else None
+    )
+    return consumer
+\end{vscodePython}
+
+Una vez hemos hecho esto podemos duplicar el cuadernos para tener dos consumidores escuchando a la vez. Si hacemos estos podemos observar cómo se distribuyen los IDs de las \textit{keys} entre los consumidores: una \textit{key} es asignada exactamente a un consumidor.
+
+\begin{figure}[H]
+    \begin{fullwidth} 
+        \centering
+        % Primera imagen del mosaico
+        \begin{subfigure}{0.48\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{water_quality_plot_many_copy.png}
+            \caption{Gráfico de calidad del agua del primer consumidor}
+        \end{subfigure}
+        % Espacio horizontal entre las imágenes
+        \hfill
+        % Segunda imagen del mosaico
+        \begin{subfigure}{0.48\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{water_quality_plot_many.png}
+            \caption{Gráfico de calidad del agua del segundo consumidor}
+        \end{subfigure}
+    \end{fullwidth}
+\end{figure}
+
+En la imagen se puede observar claramente cómo se distribuye la carga del procesamiento de las \textit{keys}. Si realizamos estos cambios se puede obtener estos resultados en el cuaderno:
+
+\begin{figure}[H]
+    \begin{fullwidth} 
+        \centering
+        \includegraphics[width=1.0\fulltextwidth]{ejercicio_2_several_consumers.png} 
+        \caption{Logs de los dos cuadernos consumiendo a la vez}
+        \label{fig:ejercicio_2_several_consumers}
+    \end{fullwidth}
+\end{figure}
+
+\section{Integrando procesos ML en data streaming}
+
+\subsection{Carga del modelo e inferencia}
+Para la implementación del sistema de toma de \textit{Machine Learning}, se ha desarrollado el siguiente código. La función \textit{perform\_inference} se encarga de transformar el diccionario de datos del sensor en un vector de características compatible con el modelo, extrayendo las variables de temperatura, pH, turbidez y oxígeno disuelto.
+
+\begin{vscodePython}
+import joblib
+import pandas as pd
+
+MODEL_PATH = "aeration_classifier.joblib"
+
+def load_prediction_model(model_uri):
+   """Carga el modelo desde el archivo local mediante deserializacion."""
+   try:
+      model = joblib.load(model_uri)
+      return model
+   except Exception as e:
+      return None
+
+def perform_inference(model, sensor_data):
+   """
+   Ejecuta la prediccion y el calculo de densidades de probabilidad.
+   Retorna la clase predicha y el vector de probabilidades.
+   """
+   try:
+      input_data = [
+      sensor_data["water_temperature"],
+      sensor_data["ph_level"],
+      sensor_data["turbidity"],
+      sensor_data["dissolved_oxygen"]
+      ]
+
+       prediction = model.predict([input_data])[0]
+       probabilities = model.predict_proba([input_data])[0]
+    
+       return prediction, probabilities
+   except Exception as e:
+       return None, None
+\end{vscodePython}
+
+Cada vez que llega un nuevo mensaje al tópico se lleva a cabo una inferencia.
+
+\subsection{Envio de predicciones a un nuevo tópico}
+
+El siguiente código imprime por pantalla los detalles de la predicción y envia la información solicitada al siguiente consumidor:
+
+\begin{vscodePython}
+for message in consumer:
+    sensor_data = message.value
+    time_stp = sensor_data["timestamp"]
+
+    # Convertir timestamp a formato legible
+    dt = datetime.fromtimestamp(time_stp)
+    formatted_time = dt.strftime()
+
+    # Inferencia del modelo
+    prediction, probas = perform_inference(model, sensor_data)
+
+    # Etiqueta legible
+    label = "NO AERATION" if prediction == 0 else "AERATION"
+
+    # Print limpio
+    print(
+        f"[{formatted_time}] \t| "
+        f"Prediction: {label} ({prediction}) \t| "
+        f"Probabilities -> "
+        f"NO_AERATION: {probas[0]:.2\%}, "
+        f"AERATION: {probas[1]:.2\%}"
+    )
+
+    # Envio a Kafka
+    send_data = {
+        "timestamp": time_stp,
+        "prediction": int(prediction),
+        "proba_no_areation": float(probas[0]),
+        "proba_areation": float(probas[1])
+    }
+
+    producer.send(pred_topic, send_data)
+
+\end{vscodePython}
+
+El resultado de esta celda de código es el siguiente:
+
+\begin{figure}[H]
+    \begin{fullwidth} 
+        \centering
+        \includegraphics[width=1.0\fulltextwidth]{ejercicio_3.png} 
+        \caption{Logs producidos por el consumidor de water data}
+        \label{fig:ejercicio_3}
+    \end{fullwidth}
+\end{figure}
+El siguiente paso es programar un consumidor que reciba los datos y genere la visualización:
+\begin{figure}[H]
+    \begin{fullwidth} 
+        \centering
+        \includegraphics[width=1.0\fulltextwidth]{ejercicio_3_b.png} 
+        \caption{Consumidor de las predicciones}
+        \label{fig:ejercicio_3_b}
+    \end{fullwidth}
+\end{figure}
+
+Este nodo genera plots como los siguientes:
+
+\begin{figure}[H]
+    \begin{fullwidth} 
+        \centering
+        \includegraphics[width=1.0\fulltextwidth]{water_prediction_plot.png} 
+        \caption{Grafico de predicciones}
+        \label{fig:water_prediction_plot}
+    \end{fullwidth}
+\end{figure}
+
+Si se ejecutan varios procesadores ML el grafico generado es el siguiente:
+
+\begin{figure}[H]
+    \begin{fullwidth} 
+        \centering
+        \includegraphics[width=1.0\fulltextwidth]{ejercicio_3_multi.png} 
+        \caption{3 Consumidores del topic water quality realizando la inferencia y enviandola a 2 consumidores. Todo esto se realiza en paralelo}
+        \label{fig:ejercicio_3_multi}
+    \end{fullwidth}
+\end{figure}
 
 %----------------------------------------------------------------------------------------
 
