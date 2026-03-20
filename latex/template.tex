@@ -160,7 +160,7 @@ En esta sección se explica cómo se ha resuelto el primer ejercicio. El primer 
 Para comenzar la interacción, nos conectamos al contenedor mediante el comando \texttt{docker exec}, lo que nos permite abrir una terminal interactiva dentro del nodo de Kafka:
 
 \begin{vscodeTerminal}
-docker exec -it kafka-backend bash
+docker exec -it kafka-jupyter bash
 \end{vscodeTerminal}
 
 Una vez dentro, el objetivo es crear nuestro primer canal de comunicación o "Topic". Los tópicos son las categorías o nombres de feeds donde se almacenan y publican los registros de datos.
@@ -290,7 +290,7 @@ Esta propiedad determina qué debe hacer el consumidor cuando se conecta a un t�
 
 Si aplicamos la configuración \textit{earliest} es consumidor retrocede al inicio del log y lee todos los mensajes históricos que estén disponibles por el broker. Es la configuración más útil cuando se desea evitar perder cualquier dato tras una caída del sistema.
 
-La configuración \textit{latest} ignora los mensajes antiguos y se queda escuchando solamente los que se produzcan desde su conexión. Es una configuración pensada para la monitorización puramente en tiempo real donde los datos del pasado ya no son relevantes para la visualización actual.
+La configuración \textit{latest} ignora los mensajes antiguos y se queda escuchando solamente los que se produzcan desde su conexión. Es una configuración pensada para la monitorización puramente en tiempo real donde los datos del pasado ya no son relevantes para el sistema de procesamiento.
 
 
 \subsection{Intentando enviar datos no serializables}
